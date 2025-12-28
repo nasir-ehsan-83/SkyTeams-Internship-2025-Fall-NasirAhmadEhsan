@@ -5,7 +5,7 @@ All weekly programming challenges are organized by week, with each question incl
 both the main solution file and a corresponding test file.
 
 ## Repository Structure
-
+```
 SkyTeams-Internship-2025-Fall-YourName
 │
 ├── week-1
@@ -21,7 +21,7 @@ SkyTeams-Internship-2025-Fall-YourName
 │   └── README.md
 │
 └── README.md
-
+```
 ## Coding Guidelines
 
 - Clear and descriptive variable and function names are used.
