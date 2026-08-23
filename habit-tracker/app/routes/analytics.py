@@ -8,14 +8,14 @@ from fastapi import (
 
 from app.dependencies import get_current_user
 from app.schemas import (
-    DashboardOut
-)
-from app.schemas import (
     HeatmapOut, 
-    ProgressChartOut
+    ProgressChartOut,
+    DashboardOut,
+    DistributionOut
 )
 from app.services.analytics_service import (
     get_dashboard_service,
+    get_distribution_service,
     get_heatmap_service,
     get_progress_chart_service
 )
@@ -70,3 +70,16 @@ async def get_progress_chart_route(
 ) -> ProgressChartOut:
     
     return await get_progress_chart_service(habit_id, period)
+
+
+
+
+@router.get(
+    '/distribution',
+    response_model = DistributionOut
+)
+async def get_distribution_route(
+    habit_id:   Annotated[BeanieObjectId, Query()]
+) -> DistributionOut:
+    
+    return await get_distribution_service(habit_id)

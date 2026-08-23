@@ -18,8 +18,11 @@ from app.models import(
     Track, 
     Streak
 )
-from app.schemas import HeatmapOut
-from app.schemas.analytics import ProgressChartOut
+from app.schemas import (
+    HeatmapOut,
+    DistributionOut, 
+    ProgressChartOut
+)
 from app.utils.enum import Timeframe
 from app.config import logger
 
@@ -161,6 +164,60 @@ async def get_progress_chart_service(
         
     except Exception as error:
         logger.error(f"Unexpected error in get_progress_chart_service: {error}", exc_info = True)
+        
+        raise HTTPException(
+            status_code = status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail = "Internal server error"
+        )
+
+
+
+
+async def get_distribution_service(
+    habit_id:   BeanieObjectId
+) -> DistributionOut:
+    
+    try:
+        habit = await Habit.get(habit_id)
+        
+        if not habit:
+            raise HTTPException(
+                status_code = status.HTTP_404_NOT_FOUND,
+                detail = "Habit not found"
+            )
+        
+        tracks = await Track.find(Track.habit_id == habit_id).to_list()
+        
+        distribution = defaultdict(int)
+        time_slots = [
+            ("6-9", 6, 9),
+            ("9-12", 9, 12),
+            ("12-15", 12, 15),
+            ("15-18", 15, 18),
+            ("18-21", 18, 21)
+        ]
+        
+        for track in tracks:
+            
+            if track.created_at:
+                hour = track.created_at.hour
+            
+                for slot_name, start, end in time_slots:
+            
+                    if start <= hour < end:
+                        distribution[slot_name] += 1
+                        break
+        
+        return DistributionOut(
+            distribution = dict(distribution),
+            habit_title = habit.title
+        )
+        
+    except HTTPException:
+        raise
+        
+    except Exception as error:
+        logger.error(f"Unexpected error in get_distribution_service: {error}", exc_info = True)
         
         raise HTTPException(
             status_code = status.HTTP_500_INTERNAL_SERVER_ERROR,
