@@ -108,3 +108,14 @@ class TestNotificationIn(BaseModel):
 class TestNotificationOut(BaseModel):
     message:    str         = Field(..., description = "Status message")
     sent_at:    datetime    = Field(..., description = "Sent timestamp")
+
+
+
+
+class NotificationItemOut(BaseModel):
+    id:         BeanieObjectId  = Field(..., description = "Notification ID")
+    type:       str             = Field(..., description = "Notification type")
+    title:      str | None      = Field(default = None, description = "Notification title")
+    message:    str             = Field(..., description = "Notification message")
+    sent_at:    datetime        = Field(..., description = "Sent timestamp")
+    status:     str             = Field(..., description = "Delivery status (delivered/failed/pending)")
