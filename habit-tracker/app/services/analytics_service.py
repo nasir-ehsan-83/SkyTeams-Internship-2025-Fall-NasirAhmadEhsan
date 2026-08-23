@@ -1,3 +1,8 @@
+from collections import defaultdict
+from datetime import (
+    date, 
+    timedelta
+)
 from fastapi import (
     HTTPException, 
     status
@@ -7,13 +12,20 @@ from app.schemas import (
     DashboardOut,
     BestHabitOut,
 )
-from app.models import Habit, Track, Streak
+from app.models import(
+    Habit, 
+    Track, 
+    Streak
+)
+from app.schemas import HeatmapOut
 from app.utils.enum import Timeframe
-from app.config.logging_handler import logger
+from app.config import logger
+
+
 
 
 async def get_dashboard_service(
-    timeframe:      Timeframe | None = None
+    timeframe:  Timeframe | None = None
 ) -> DashboardOut:
     try:
         total_habits = await Habit.count()
@@ -60,3 +72,41 @@ async def get_dashboard_service(
             detail = "Internal server error"
         )
 
+
+
+
+async def get_heatmap_service(
+    year:   int,
+    month:  int | None = None
+) -> HeatmapOut:
+    try:
+        start_date = date(year, month, 1) if month else date(year, 1, 1)
+        end_date = date(year, month + 1, 1) - timedelta(days = 1) if month else date(year, 12, 31)
+        
+        tracks = await Track.find(
+            Track.date >= start_date,
+            Track.date <= end_date
+        ).to_list()
+        
+        heatmap = defaultdict(int)
+
+        for track in tracks:
+            day = track.date.day
+            heatmap[day] += 1
+        
+        return HeatmapOut(
+            heatmap = dict(heatmap),
+            year = year,
+            month = month
+        )
+        
+    except HTTPException:
+        raise
+        
+    except Exception as error:
+        logger.error(f"Unexpected error in get_heatmap_service: {error}", exc_info = True)
+        
+        raise HTTPException(
+            status_code = status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail = "Internal server error"
+        )
