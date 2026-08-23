@@ -94,3 +94,17 @@ class SettingsUpdate(BaseModel):
             return sorted(set(v))
         
         return v
+    
+
+
+
+class TestNotificationIn(BaseModel):
+    type:       str = Field(..., description = "Notification type (push/email)")
+    message:    str = Field(..., description = "Test message", min_length = 1)
+
+
+
+
+class TestNotificationOut(BaseModel):
+    message:    str         = Field(..., description = "Status message")
+    sent_at:    datetime    = Field(..., description = "Sent timestamp")
