@@ -119,3 +119,11 @@ class NotificationItemOut(BaseModel):
     message:    str             = Field(..., description = "Notification message")
     sent_at:    datetime        = Field(..., description = "Sent timestamp")
     status:     str             = Field(..., description = "Delivery status (delivered/failed/pending)")
+
+
+
+
+class NotificationHistoryOut(BaseModel):
+    notifications: List[NotificationItemOut] = Field(default_factory = list, description = "List of notifications")
+    total:      int = Field(..., description = "Total count")
+    limit:      int = Field(..., description = "Requested limit")
