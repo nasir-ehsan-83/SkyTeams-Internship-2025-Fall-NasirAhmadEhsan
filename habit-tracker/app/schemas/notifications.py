@@ -72,3 +72,25 @@ class SettingsOut(BaseModel):
     reminder_time:      str | None          = Field(default = None, description = "Default reminder time", pattern = r"^([01]\d|2[0-3]):([0-5]\d)$")
     reminder_days:      List[int] | None    = Field(default = None, description = "Default reminder days")
     
+
+
+
+class SettingsUpdate(BaseModel):
+    push_enabled:       bool | None         = Field(default = None, description = "Enable push notifications")
+    email_enabled:      bool | None         = Field(default = None, description = "Enable email notifications")
+    reminder_time:      str | None          = Field(default = None, description = "Default reminder time", pattern = r"^([01]\d|2[0-3]):([0-5]\d)$")
+    reminder_days:      List[int] | None    = Field(default = None, description = "Default reminder days")
+    
+    @field_validator('reminder_days')
+    @classmethod
+    def validate_days(cls, v: List[int] | None) -> List[int] | None:
+        
+        if v is not None:
+            for day in v:
+        
+                if not 0 <= day <= 6:
+                    raise ValueError('Days must be between 0 (Monday) and 6 (Sunday)')
+        
+            return sorted(set(v))
+        
+        return v
