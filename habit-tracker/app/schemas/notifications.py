@@ -1,3 +1,4 @@
+from datetime import datetime
 from typing import List
 from pydantic import (
     BaseModel, 
@@ -10,6 +11,7 @@ from beanie import BeanieObjectId
 
 
 class ScheduleCreate(BaseModel):
+
     habit_id:   BeanieObjectId  = Field(..., description = "Habit ID to set reminder for")
     time:       str             = Field(..., description = "Reminder time in HH:MM format", pattern = r"^([01]\d|2[0-3]):([0-5]\d)$")
     days:       List[int]       = Field(..., description = "Days of week (0=Monday to 6=Sunday)", min_length = 1, max_length = 7)
@@ -23,3 +25,17 @@ class ScheduleCreate(BaseModel):
                 raise ValueError('Days must be between 0 (Monday) and 6 (Sunday)')
         
         return sorted(set(v))
+    
+
+
+
+class ScheduleOut(BaseModel):
+
+    schedule_id:    BeanieObjectId  = Field(..., description = "Schedule ID")
+    habit_id:       BeanieObjectId  = Field(..., description = "Habit ID")
+    time:           str             = Field(..., description = "Reminder time")
+    days:           List[int]       = Field(..., description = "Days of week")
+    type:           str             = Field(..., description = "Notification type")
+    next_trigger:   datetime        = Field(..., description = "Next trigger time")
+    is_active:      bool            = Field(default = True, description = "Whether schedule is active")
+    created_at:     datetime        = Field(..., description = "Creation timestamp")
