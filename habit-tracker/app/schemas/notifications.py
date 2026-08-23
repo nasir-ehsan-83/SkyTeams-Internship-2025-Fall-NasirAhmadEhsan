@@ -39,3 +39,25 @@ class ScheduleOut(BaseModel):
     next_trigger:   datetime        = Field(..., description = "Next trigger time")
     is_active:      bool            = Field(default = True, description = "Whether schedule is active")
     created_at:     datetime        = Field(..., description = "Creation timestamp")
+
+
+
+
+class ScheduleUpdate(BaseModel):
+    time:       str | None          = Field(default = None, description = "New reminder time", pattern = r"^([01]\d|2[0-3]):([0-5]\d)$")
+    days:       List[int] | None    = Field(default = None, description = "New days of week")
+    is_active:  bool | None         = Field(default = None, description = "Activate or deactivate schedule")
+    
+    @field_validator('days')
+    @classmethod
+    def validate_days(cls, v: List[int] | None) -> List[int] | None:
+        
+        if v is not None:
+            for day in v:
+                
+                if not 0 <= day <= 6:
+                    raise ValueError('Days must be between 0 (Monday) and 6 (Sunday)')
+            
+            return sorted(set(v))
+        
+        return v
