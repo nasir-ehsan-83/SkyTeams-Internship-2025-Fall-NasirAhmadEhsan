@@ -18,18 +18,24 @@ from app.schemas import (
 )
 from app.config import logger
 from app.models import Track
-
+from app.services.streaks_service import update_streak_service
 
 
 
 async def create_track_service(
-    owner_id:   BeanieObjectId,
-    track_in:   TrackCreate
+    owner_id: BeanieObjectId,
+    track_in: TrackCreate
 ) -> Track:
     
     try:
         track_data: Dict[str, Any] = track_in.model_dump(exclude_unset = True)
         track_date = track_data.get("date")
+        
+        if track_date is None:
+            raise HTTPException(
+                status_code = status.HTTP_400_BAD_REQUEST,
+                detail = "Date is required"
+            )
         
         query: Dict[str, Any] = {
             "owner_id": owner_id,
@@ -50,14 +56,22 @@ async def create_track_service(
             owner_id = owner_id
         )
 
-        return await new_track.insert() # type: ignore
+        created_track = await new_track.insert() # type: ignore
+        
+        await update_streak_service(
+            owner_id = owner_id,
+            habit_id = track_in.habit_id,
+            track_date = track_date
+        )
+        
+        return created_track
 
     except HTTPException:
         raise
     
     except Exception as error:
         logger.error(f"Unexpected error in create_track_service: {error}", exc_info = True)
-    
+       
         raise HTTPException(
             status_code = status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail = "Internal server error"
@@ -122,7 +136,7 @@ async def delete_track_service(
                 detail = "You do not have permission to delete this track"
             )
         
-        await track.delete()
+        await track.delete() # type: ignore
 
         return Response(status_code = status.HTTP_204_NO_CONTENT)
     
