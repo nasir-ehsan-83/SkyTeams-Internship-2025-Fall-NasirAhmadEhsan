@@ -13,11 +13,13 @@ from app.schemas import (
     DashboardOut,
     DistributionOut
 )
+from app.schemas.analytics import InsightsOut
 from app.services.analytics_service import (
     get_dashboard_service,
     get_distribution_service,
     get_heatmap_service,
-    get_progress_chart_service
+    get_progress_chart_service,
+    get_insights_service
 )
 from app.utils.enum import Timeframe
 
@@ -83,3 +85,13 @@ async def get_distribution_route(
 ) -> DistributionOut:
     
     return await get_distribution_service(habit_id)
+
+
+
+
+@router.get(
+    '/insights',
+    response_model = InsightsOut
+)
+async def get_insights_route() -> InsightsOut:
+    return await get_insights_service()

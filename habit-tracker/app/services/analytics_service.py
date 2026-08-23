@@ -23,6 +23,7 @@ from app.schemas import (
     DistributionOut, 
     ProgressChartOut
 )
+from app.schemas.analytics import InsightsOut
 from app.utils.enum import Timeframe
 from app.config import logger
 
@@ -218,6 +219,64 @@ async def get_distribution_service(
         
     except Exception as error:
         logger.error(f"Unexpected error in get_distribution_service: {error}", exc_info = True)
+        
+        raise HTTPException(
+            status_code = status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail = "Internal server error"
+        )
+    
+
+
+
+async def get_insights_service() -> InsightsOut:
+    
+    try:
+        insights = []
+        
+        habits = await Habit.find().to_list()
+        total_habits = len(habits)
+        
+        if total_habits > 0:
+            insights.append(f"You have {total_habits} active habits")
+        
+        top_streak = await Streak.find().sort("-current_streak").limit(1).to_list()
+        
+        if top_streak:
+            habit = await Habit.get(top_streak[0].habit_id)
+        
+            if habit:
+                insights.append(f"Best streak: {top_streak[0].current_streak} days for {habit.title}")
+        
+        tracks_today = await Track.find(Track.date == date.today()).count()
+        
+        if tracks_today == 0:
+            insights.append("You haven't tracked any habit today. Start now!")
+        
+        else:
+            insights.append(f"You've tracked {tracks_today} habits today")
+        
+        weekday_tracks = defaultdict(int)
+        tracks = await Track.find().to_list()
+        
+        for track in tracks:
+            weekday = track.date.weekday()
+            weekday_tracks[weekday] += 1
+        
+        if weekday_tracks:
+            
+            best_day = max(weekday_tracks.items(), key=lambda x: x[1])[0]
+            days = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"]
+            insights.append(f"Your most productive day is {days[best_day]}")
+        
+        return InsightsOut(
+            insights=insights
+        )
+        
+    except HTTPException:
+        raise
+        
+    except Exception as error:
+        logger.error(f"Unexpected error in get_insights_service: {error}", exc_info = True)
         
         raise HTTPException(
             status_code = status.HTTP_500_INTERNAL_SERVER_ERROR,
