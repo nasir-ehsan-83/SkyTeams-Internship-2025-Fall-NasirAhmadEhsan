@@ -64,3 +64,11 @@ class DistributionOut(BaseModel):
 class InsightsOut(BaseModel):
     insights:       List[str]   = Field(default_factory = list, description = "List of AI-generated insights")
     generated_at:   datetime    = Field(default_factory = lambda: datetime.now(), description = "Timestamp of insight generation")
+
+
+
+
+class ExportOut(BaseModel):
+    download_url:   str         = Field(..., description = "URL to download the exported file")
+    format:         str         = Field(..., description = "Export format (json or csv)")
+    expires_at:     datetime    = Field(..., description = "Expiration time of the download URL")
