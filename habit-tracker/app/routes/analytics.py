@@ -1,4 +1,5 @@
 from typing import Annotated
+from beanie import BeanieObjectId
 from fastapi import (
     APIRouter, 
     Depends, 
@@ -9,10 +10,14 @@ from app.dependencies import get_current_user
 from app.schemas import (
     DashboardOut
 )
-from app.schemas import HeatmapOut
+from app.schemas import (
+    HeatmapOut, 
+    ProgressChartOut
+)
 from app.services.analytics_service import (
     get_dashboard_service,
-    get_heatmap_service
+    get_heatmap_service,
+    get_progress_chart_service
 )
 from app.utils.enum import Timeframe
 
@@ -51,3 +56,17 @@ async def get_heatmap_route(
 ) -> HeatmapOut:
     
     return await get_heatmap_service(year, month)
+
+
+
+
+@router.get(
+    '/progress-chart',
+    response_model = ProgressChartOut
+)
+async def get_progress_chart_route(
+    habit_id:   Annotated[BeanieObjectId, Query()],
+    period:     Annotated[int, Query(default = 90, ge = 1, le = 365)]
+) -> ProgressChartOut:
+    
+    return await get_progress_chart_service(habit_id, period)

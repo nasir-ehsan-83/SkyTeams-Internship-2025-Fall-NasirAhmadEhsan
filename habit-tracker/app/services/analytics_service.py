@@ -3,6 +3,7 @@ from datetime import (
     date, 
     timedelta
 )
+from beanie import BeanieObjectId
 from fastapi import (
     HTTPException, 
     status
@@ -18,6 +19,7 @@ from app.models import(
     Streak
 )
 from app.schemas import HeatmapOut
+from app.schemas.analytics import ProgressChartOut
 from app.utils.enum import Timeframe
 from app.config import logger
 
@@ -27,6 +29,7 @@ from app.config import logger
 async def get_dashboard_service(
     timeframe:  Timeframe | None = None
 ) -> DashboardOut:
+    
     try:
         total_habits = await Habit.count()
         
@@ -79,6 +82,7 @@ async def get_heatmap_service(
     year:   int,
     month:  int | None = None
 ) -> HeatmapOut:
+    
     try:
         start_date = date(year, month, 1) if month else date(year, 1, 1)
         end_date = date(year, month + 1, 1) - timedelta(days = 1) if month else date(year, 12, 31)
@@ -105,6 +109,58 @@ async def get_heatmap_service(
         
     except Exception as error:
         logger.error(f"Unexpected error in get_heatmap_service: {error}", exc_info = True)
+        
+        raise HTTPException(
+            status_code = status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail = "Internal server error"
+        )
+
+
+
+
+async def get_progress_chart_service(
+    habit_id:   BeanieObjectId,
+    period:     int = 90
+) -> ProgressChartOut:
+    
+    try:
+        habit = await Habit.get(habit_id)
+        
+        if not habit:
+            raise HTTPException(
+                status_code = status.HTTP_404_NOT_FOUND,
+                detail = "Habit not found"
+            )
+        
+        start_date = date.today() - timedelta(days = period)
+        
+        tracks = await Track.find(
+            Track.habit_id == habit_id,
+            Track.date >= start_date
+        ).sort("date").to_list()
+        
+        labels = []
+        values = []
+        track_dict = {track.date: 1 for track in tracks}
+        
+        current_date = start_date
+        while current_date <= date.today():
+            labels.append(current_date)
+            values.append(track_dict.get(current_date, 0))
+            current_date += timedelta(days = 1)
+        
+        return ProgressChartOut(
+            labels = labels,
+            values = values,
+            target_line = habit.target_count if hasattr(habit, 'target_count') else None,
+            habit_title = habit.title
+        )
+        
+    except HTTPException:
+        raise
+        
+    except Exception as error:
+        logger.error(f"Unexpected error in get_progress_chart_service: {error}", exc_info = True)
         
         raise HTTPException(
             status_code = status.HTTP_500_INTERNAL_SERVER_ERROR,
