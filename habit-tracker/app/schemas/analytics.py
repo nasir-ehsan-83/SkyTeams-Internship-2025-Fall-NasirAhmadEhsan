@@ -1,4 +1,8 @@
-from typing import Dict
+from typing import (
+    Dict, 
+    List
+)
+from datetime import date
 from pydantic import (
     BaseModel, 
     Field
@@ -31,3 +35,12 @@ class HeatmapOut(BaseModel):
     )
     year:       int             = Field(..., description = "Year of the heatmap")
     month:      int | None      = Field(default = None, description = "Month of the heatmap if applicable")
+
+
+
+
+class ProgressChartOut(BaseModel):
+    labels:         List[date]  = Field(default_factory = list, description = "List of dates for x-axis")
+    values:         List[int]   = Field(default_factory = list, description = "List of values for y-axis")
+    target_line:    int | None  = Field(default = None, description = "Target value line")
+    habit_title:    str         = Field(..., description = "Habit title")
