@@ -2,10 +2,7 @@ from typing import (
     Any, 
     List
 )
-from datetime import (
-    date, 
-    datetime
-)
+import datetime 
 from beanie import BeanieObjectId
 from pydantic import (
     BaseModel,
@@ -22,8 +19,8 @@ class TrackCreate(BaseModel):
     habit_id:   BeanieObjectId
     note:       str | None = Field(default = None, max_length = 500)
     value:      int = Field(default = 1, ge = 0)
-    date:       date = Field(default_factory = lambda: datetime.now().date())
-    timestamp:  int = Field(default_factory = lambda: int(datetime.now().timestamp()))
+    date:       datetime.date = Field(default_factory = lambda: datetime.datetime.now().date())
+    timestamp:  int = Field(default_factory = lambda: int(datetime.datetime.now().timestamp()))
     status:     HabitStatus = Field(default = HabitStatus.completed)
 
 
@@ -34,11 +31,11 @@ class TrackOut(BaseModel):
     habit_id:   BeanieObjectId
     note:       str | None
     value:      int
-    date:       date
+    date:       datetime.date
     timestamp:  int
     status:     HabitStatus
-    created_at: datetime
-    updated_at: datetime
+    created_at: datetime.datetime
+    updated_at: datetime.datetime
 
     model_config = ConfigDict(
         from_attributes = True, 
@@ -65,5 +62,5 @@ class TrackUpdate(BaseModel):
 
 
 class MissedDaysResponse(BaseModel):
-    missed_days:    List[date]
+    missed_days:    List[datetime.date]
     habit_id:       BeanieObjectId | None = None

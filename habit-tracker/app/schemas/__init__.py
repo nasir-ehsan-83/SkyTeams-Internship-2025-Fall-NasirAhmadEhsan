@@ -17,7 +17,8 @@ from .token import (
 from .tracks import (
     TrackCreate,
     TrackOut,
-    TrackUpdate
+    TrackUpdate,
+    MissedDaysResponse
 )
 from .validator import (
     VerifyEmail,
@@ -47,10 +48,12 @@ __all__ = [
     "TrackCreate",
     "TrackOut",
     "TrackUpdate",
+    "MissedDaysResponse",
     "VerifyEmail",
     "ResetPassword",
     "PreferenceOut",
     "PreferenceUpdate",
     "CurrentStreakOut",
     "BestStreakOut",
+    "AppStatsOut"
 ]
