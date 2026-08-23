@@ -33,7 +33,27 @@ from .streaks import (
     BestStreakOut,
 )
 from .admin import AppStatsOut
-
+from .analytics import (
+    DashboardOut,
+    BestHabitOut,
+    HeatmapOut,
+    ProgressChartOut,
+    DistributionOut,
+    InsightsOut,
+    ExportOut
+)
+from .notifications import (
+    ScheduleCreate,
+    ScheduleOut,
+    ScheduleUpdate,
+    SettingsOut,
+    SettingsUpdate,
+    TestNotificationOut,
+    TestNotificationIn,
+    NotificationHistoryOut,
+    NotificationItemOut,
+    MessageOut
+)
 __all__ = [
     "UserCreate",
     "UserAdminOut",
@@ -55,5 +75,22 @@ __all__ = [
     "PreferenceUpdate",
     "CurrentStreakOut",
     "BestStreakOut",
-    "AppStatsOut"
+    "AppStatsOut",
+    "DashboardOut",
+    "BestHabitOut",
+    "HeatmapOut",
+    "ProgressChartOut",
+    "DistributionOut",
+    "InsightsOut",
+    "ExportOut",
+    "ScheduleCreate",
+    "ScheduleOut",
+    "ScheduleUpdate",
+    "SettingsOut",
+    "SettingsUpdate",
+    "TestNotificationOut",
+    "TestNotificationIn",
+    "NotificationHistoryOut",
+    "NotificationItemOut",
+    "MessageOut"
 ]

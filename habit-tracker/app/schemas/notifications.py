@@ -127,3 +127,9 @@ class NotificationHistoryOut(BaseModel):
     notifications: List[NotificationItemOut] = Field(default_factory = list, description = "List of notifications")
     total:      int = Field(..., description = "Total count")
     limit:      int = Field(..., description = "Requested limit")
+
+
+
+
+class MessageOut(BaseModel):
+    message:    str = Field(..., description = "Response message")
