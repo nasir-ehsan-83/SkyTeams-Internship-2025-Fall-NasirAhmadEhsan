@@ -1,4 +1,5 @@
 from typing import Annotated
+from datetime import date
 from beanie import BeanieObjectId
 from fastapi import (
     APIRouter, 
@@ -7,21 +8,23 @@ from fastapi import (
 )
 
 from app.dependencies import get_current_user
+from app.utils.enum import Timeframe
 from app.schemas import (
     HeatmapOut, 
     ProgressChartOut,
     DashboardOut,
-    DistributionOut
+    DistributionOut,
+    ExportOut, 
+    InsightsOut
 )
-from app.schemas.analytics import InsightsOut
 from app.services.analytics_service import (
     get_dashboard_service,
     get_distribution_service,
+    export_data_service,
     get_heatmap_service,
     get_progress_chart_service,
     get_insights_service
 )
-from app.utils.enum import Timeframe
 
 
 
@@ -95,3 +98,18 @@ async def get_distribution_route(
 )
 async def get_insights_route() -> InsightsOut:
     return await get_insights_service()
+
+
+
+
+@router.get(
+    '/export',
+    response_model = ExportOut
+)
+async def export_data_route(
+    format:         Annotated[str, Query(default = "json", pattern = "^(json|csv)$")],
+    from_date:      Annotated[date | None, Query(default = None)],
+    to_date:        Annotated[date | None, Query(default = None)]
+) -> ExportOut:
+    
+    return await export_data_service(format, from_date, to_date)

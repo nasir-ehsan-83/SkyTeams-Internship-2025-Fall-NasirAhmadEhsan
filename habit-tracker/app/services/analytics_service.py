@@ -1,6 +1,7 @@
 from collections import defaultdict
 from datetime import (
-    date, 
+    date,
+    datetime, 
     timedelta
 )
 from beanie import BeanieObjectId
@@ -9,10 +10,6 @@ from fastapi import (
     status
 )
 
-from app.schemas import (
-    DashboardOut,
-    BestHabitOut,
-)
 from app.models import(
     Habit, 
     Track, 
@@ -21,9 +18,12 @@ from app.models import(
 from app.schemas import (
     HeatmapOut,
     DistributionOut, 
-    ProgressChartOut
+    ProgressChartOut,
+    DashboardOut,
+    BestHabitOut, 
+    ExportOut, 
+    InsightsOut
 )
-from app.schemas.analytics import InsightsOut
 from app.utils.enum import Timeframe
 from app.config import logger
 
@@ -264,7 +264,7 @@ async def get_insights_service() -> InsightsOut:
         
         if weekday_tracks:
             
-            best_day = max(weekday_tracks.items(), key=lambda x: x[1])[0]
+            best_day = max(weekday_tracks.items(), key = lambda x: x[1])[0]
             days = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"]
             insights.append(f"Your most productive day is {days[best_day]}")
         
@@ -277,6 +277,55 @@ async def get_insights_service() -> InsightsOut:
         
     except Exception as error:
         logger.error(f"Unexpected error in get_insights_service: {error}", exc_info = True)
+        
+        raise HTTPException(
+            status_code = status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail = "Internal server error"
+        )
+
+
+
+
+async def export_data_service(
+    format:     str,
+    from_date:  date | None = None,
+    to_date:    date | None = None
+) -> ExportOut:
+    
+    try:
+        query = {}
+        
+        if from_date:
+            query["date"] = {"$gte": from_date}
+        
+        if to_date:
+            query["date"] = {"$lte": to_date}
+        
+        tracks = await Track.find(query).to_list()
+        
+        export_data = []
+        
+        for track in tracks:
+        
+            export_data.append({
+                "habit_id": str(track.habit_id),
+                "date": track.date.isoformat(),
+                "created_at": track.created_at.isoformat() if track.created_at else None
+            })
+        
+        download_url = f"https://s3.amazonaws.com/bucket/export_{date.today().isoformat()}.{format}"
+        
+        return ExportOut(
+            download_url = download_url,
+            format = format,
+            expires_at = datetime.now() + timedelta(hours = 24)
+        )
+        
+    except HTTPException:
+        raise
+        
+    except Exception as error:
+        logger.error(f"Unexpected error in get_export_service: {error}", exc_info = True)
         
         raise HTTPException(
             status_code = status.HTTP_500_INTERNAL_SERVER_ERROR,
