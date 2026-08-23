@@ -36,3 +36,13 @@ class HabitCategory(str, Enum):
     work        = "work"
     routine     = "routine"
     social      = "social"
+
+
+
+
+class Timeframe(str, Enum):
+    DAY         = "day"
+    WEEK        = "week"
+    MONTH       = "month"
+    YEAR        = "year"
+    ALL         = "all"
