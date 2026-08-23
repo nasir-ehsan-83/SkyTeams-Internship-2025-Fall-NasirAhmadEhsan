@@ -2,7 +2,10 @@ from typing import (
     Dict, 
     List
 )
-from datetime import date
+from datetime import (
+    date,
+    datetime
+)
 from pydantic import (
     BaseModel, 
     Field
@@ -54,3 +57,10 @@ class DistributionOut(BaseModel):
         description = "Time slots with count of completions"
     )
     habit_title:    str = Field(..., description = "Habit title")
+
+
+
+
+class InsightsOut(BaseModel):
+    insights:       List[str]   = Field(default_factory = list, description = "List of AI-generated insights")
+    generated_at:   datetime    = Field(default_factory = lambda: datetime.now(), description = "Timestamp of insight generation")
