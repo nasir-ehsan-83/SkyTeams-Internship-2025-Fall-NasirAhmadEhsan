@@ -44,3 +44,13 @@ class ProgressChartOut(BaseModel):
     values:         List[int]   = Field(default_factory = list, description = "List of values for y-axis")
     target_line:    int | None  = Field(default = None, description = "Target value line")
     habit_title:    str         = Field(..., description = "Habit title")
+
+ 
+
+
+class DistributionOut(BaseModel):
+    distribution:   Dict[str, int] = Field(
+        default_factory = dict,
+        description = "Time slots with count of completions"
+    )
+    habit_title:    str = Field(..., description = "Habit title")
