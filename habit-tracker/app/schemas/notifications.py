@@ -61,3 +61,14 @@ class ScheduleUpdate(BaseModel):
             return sorted(set(v))
         
         return v
+    
+
+
+
+class SettingsOut(BaseModel):
+
+    push_enabled:       bool                = Field(default = True, description = "Push notifications enabled")
+    email_enabled:      bool                = Field(default = False, description = "Email notifications enabled")
+    reminder_time:      str | None          = Field(default = None, description = "Default reminder time", pattern = r"^([01]\d|2[0-3]):([0-5]\d)$")
+    reminder_days:      List[int] | None    = Field(default = None, description = "Default reminder days")
+    
