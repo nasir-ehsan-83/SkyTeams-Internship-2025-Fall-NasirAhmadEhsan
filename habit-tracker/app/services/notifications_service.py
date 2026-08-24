@@ -8,19 +8,24 @@ from fastapi import (
 )
 from beanie import BeanieObjectId
 
-from app.models.notifications import NotificationSettings
+from app.config import logger
 from app.schemas import (
     ScheduleCreate,
     ScheduleOut,
     MessageOut, 
-    ScheduleUpdate
+    ScheduleUpdate,
+    NotificationHistoryOut, 
+    NotificationItemOut, 
+    SettingsOut, 
+    SettingsUpdate, 
+    TestNotificationIn, 
+    TestNotificationOut
 )
 from app.models import (
     Habit, 
-    Notification
+    Notification,
+    NotificationSettings
 )
-from app.config import logger
-from app.schemas.notifications import SettingsOut, SettingsUpdate, TestNotificationIn, TestNotificationOut
 
 
 
@@ -288,6 +293,53 @@ async def send_test_notification_service(
         
     except Exception as error:
         logger.error(f"Unexpected error in send_test_notification_service: {error}", exc_info = True)
+        
+        raise HTTPException(
+            status_code = status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail = "Internal server error"
+        )
+
+
+
+
+async def get_notification_history_service(
+    owner_id:   BeanieObjectId,
+    limit:      int = 20
+) -> NotificationHistoryOut:
+    
+    try:
+        notifications = await Notification.find({
+            "owner_id": owner_id,
+            "sent_at": {"$ne": None}
+        }).sort("-sent_at").limit(limit).to_list()
+        
+        notification_items = []
+        for notif in notifications:
+           
+            notification_items.append(
+                NotificationItemOut(
+                    id = notif.id, # type: ignore
+                    type = notif.type,
+                    title = notif.title,
+                    message = notif.message or "No message",
+                    sent_at = notif.sent_at or datetime.now(),
+                    status = notif.status
+                )
+            )
+        
+        total = await Notification.find({"owner_id": owner_id}).count()
+        
+        return NotificationHistoryOut(
+            notifications = notification_items,
+            total = total,
+            limit = limit
+        )
+        
+    except HTTPException:
+        raise
+        
+    except Exception as error:
+        logger.error(f"Unexpected error in get_notification_history_service: {error}", exc_info = True)
         
         raise HTTPException(
             status_code = status.HTTP_500_INTERNAL_SERVER_ERROR,
