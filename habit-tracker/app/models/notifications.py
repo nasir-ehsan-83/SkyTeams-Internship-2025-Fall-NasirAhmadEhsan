@@ -51,3 +51,24 @@ class Notification(Document):
 
 
 
+
+class NotificationSettings(Document):
+
+    owner_id:           BeanieObjectId      = Field(..., description="User ID")
+    push_enabled:       bool                = Field(default = True, description = "Push notifications enabled")
+    email_enabled:      bool                = Field(default = False, description = "Email notifications enabled")
+    reminder_time:      str | None          = Field(default = None, description = "Default reminder time")
+    reminder_days:      List[int] | None    = Field(default = None, description = "Default reminder days")
+    
+    created_at:         datetime            = Field(default_factory = lambda: datetime.now(timezone.utc))
+    updated_at:         datetime            = Field(default_factory = lambda: datetime.now(timezone.utc))
+    
+    @before_event([Replace, Update])
+    async def update_timestamp(self) -> None:
+        self.updated_at = datetime.now(timezone.utc)
+    
+    class Settings:
+        name = "notification_settings"
+        indexes = [
+            IndexModel([("owner_id", ASCENDING)], unique = True)
+        ]
