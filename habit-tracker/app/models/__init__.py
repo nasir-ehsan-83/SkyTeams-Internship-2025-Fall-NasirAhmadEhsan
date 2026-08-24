@@ -3,11 +3,19 @@ from .habits import Habit
 from .tracks import Track
 from .preferences import UserPreference
 from .streaks import Streak
+from .notifications import (
+    Notification,
+    NotificationSettings
+)
+
 
 
 __all__ = [
     "User",
     "Habit",
     "Track",
-    "UserPreference"
+    "UserPreference",
+    "Streak",
+    "Notification",
+    "NotificationSettings"
 ]
