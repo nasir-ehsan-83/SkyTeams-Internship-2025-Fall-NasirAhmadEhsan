@@ -8,6 +8,7 @@ from fastapi import (
 )
 from beanie import BeanieObjectId
 
+from app.models.notifications import NotificationSettings
 from app.schemas import (
     ScheduleCreate,
     ScheduleOut,
@@ -19,6 +20,7 @@ from app.models import (
     Notification
 )
 from app.config import logger
+from app.schemas.notifications import SettingsOut
 
 
 
@@ -170,3 +172,38 @@ async def delete_schedule_service(
             detail = "Internal server error"
         )
 
+
+
+
+async def get_settings_service(
+    owner_id:   BeanieObjectId
+) -> SettingsOut:
+    
+    try:
+        settings = await NotificationSettings.find_one({"owner_id": owner_id})
+        
+        if not settings:
+            return SettingsOut(
+                push_enabled = True,
+                email_enabled = False,
+                reminder_time = None,
+                reminder_days = None
+            )
+        
+        return SettingsOut(
+            push_enabled = settings.push_enabled,
+            email_enabled = settings.email_enabled,
+            reminder_time = settings.reminder_time,
+            reminder_days = settings.reminder_days
+        )
+        
+    except HTTPException:
+        raise
+        
+    except Exception as error:
+        logger.error(f"Unexpected error in get_settings_service: {error}", exc_info = True)
+        
+        raise HTTPException(
+            status_code = status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail = "Internal server error"
+        )

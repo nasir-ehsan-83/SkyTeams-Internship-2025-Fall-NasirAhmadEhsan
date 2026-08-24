@@ -13,13 +13,17 @@ from app.schemas import (
     ScheduleOut,
     TokenData,
     MessageOut,
-    ScheduleUpdate
+    ScheduleUpdate,
+    SettingsOut
 )
 from app.services.notifications_service import (
     create_schedule_service,
     update_schedule_service,
-    delete_schedule_service
+    delete_schedule_service,
+    get_settings_service
 )
+
+
 
 
 router: APIRouter = APIRouter(
@@ -71,3 +75,16 @@ async def delete_schedule_route(
 ) -> MessageOut:
     
     return await delete_schedule_service(current_user.id, schedule_id)
+
+
+
+
+@router.get(
+    '/settings',
+    response_model = SettingsOut
+)
+async def get_settings_route(
+    current_user:   Annotated[TokenData, Depends(get_current_user)]
+) -> SettingsOut:
+    
+    return await get_settings_service(current_user.id)
