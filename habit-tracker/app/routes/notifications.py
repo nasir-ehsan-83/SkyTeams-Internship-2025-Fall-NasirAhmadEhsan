@@ -17,7 +17,8 @@ from app.schemas import (
 )
 from app.services.notifications_service import (
     create_schedule_service,
-    update_schedule_service
+    update_schedule_service,
+    delete_schedule_service
 )
 
 
@@ -57,3 +58,16 @@ async def update_schedule_route(
     
     return await update_schedule_service(current_user.id, schedule_id, schedule_in)
 
+
+
+
+@router.delete(
+    '/schedule/{schedule_id}',
+    response_model = MessageOut
+)
+async def delete_schedule_route(
+    current_user:   Annotated[TokenData, Depends(get_current_user)],
+    schedule_id:    Annotated[BeanieObjectId, Path(...)]
+) -> MessageOut:
+    
+    return await delete_schedule_service(current_user.id, schedule_id)

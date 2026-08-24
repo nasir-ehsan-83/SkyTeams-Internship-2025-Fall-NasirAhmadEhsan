@@ -131,3 +131,42 @@ async def update_schedule_service(
             status_code = status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail = "Internal server error"
         )
+
+
+
+
+async def delete_schedule_service(
+    owner_id:       BeanieObjectId,
+    schedule_id:    BeanieObjectId
+) -> MessageOut:
+    
+    try:
+        
+        notification = await Notification.find_one({
+            "_id": schedule_id,
+            "owner_id": owner_id
+        })
+        
+        if not notification:
+            raise HTTPException(
+                status_code = status.HTTP_404_NOT_FOUND,
+                detail = "Schedule not found"
+            )
+        
+        await notification.delete() # type: ignore
+        
+        return MessageOut(
+            message = "Schedule deleted successfully"
+        )
+        
+    except HTTPException:
+        raise
+        
+    except Exception as error:
+        logger.error(f"Unexpected error in delete_schedule_service: {error}", exc_info = True)
+        
+        raise HTTPException(
+            status_code = status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail = "Internal server error"
+        )
+
