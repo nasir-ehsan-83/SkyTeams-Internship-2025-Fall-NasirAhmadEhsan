@@ -20,7 +20,7 @@ from app.models import (
     Notification
 )
 from app.config import logger
-from app.schemas.notifications import SettingsOut, SettingsUpdate
+from app.schemas.notifications import SettingsOut, SettingsUpdate, TestNotificationIn, TestNotificationOut
 
 
 
@@ -245,6 +245,49 @@ async def update_settings_service(
         
     except Exception as error:
         logger.error(f"Unexpected error in update_settings_service: {error}", exc_info = True)
+        
+        raise HTTPException(
+            status_code = status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail = "Internal server error"
+        )
+
+
+
+
+async def send_test_notification_service(
+    owner_id:   BeanieObjectId,
+    test_in:    TestNotificationIn
+) -> TestNotificationOut:
+    
+    try:
+        logger.info(f"Sending test {test_in.type} notification to user {owner_id}: {test_in.message}")
+        
+        notification = Notification(
+            owner_id = owner_id,
+            habit_id = BeanieObjectId(),
+            time = datetime.now().strftime("%H:%M"),
+            days = [],
+            type = "test",
+            next_trigger = datetime.now(),
+            is_active = False,
+            title = "Test Notification",
+            message = test_in.message,
+            sent_at = datetime.now(),
+            status = "delivered"
+        )
+        
+        await notification.insert() # type: ignore
+        
+        return TestNotificationOut(
+            message = f"Test {test_in.type} notification sent successfully",
+            sent_at = datetime.now()
+        )
+        
+    except HTTPException:
+        raise
+        
+    except Exception as error:
+        logger.error(f"Unexpected error in send_test_notification_service: {error}", exc_info = True)
         
         raise HTTPException(
             status_code = status.HTTP_500_INTERNAL_SERVER_ERROR,

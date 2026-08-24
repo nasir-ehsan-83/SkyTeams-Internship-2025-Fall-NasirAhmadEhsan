@@ -15,14 +15,17 @@ from app.schemas import (
     MessageOut,
     ScheduleUpdate,
     SettingsOut,
-    SettingsUpdate
+    SettingsUpdate,
+    TestNotificationIn, 
+    TestNotificationOut
 )
 from app.services.notifications_service import (
     create_schedule_service,
     update_schedule_service,
     delete_schedule_service,
     get_settings_service,
-    update_settings_service
+    update_settings_service,
+    send_test_notification_service
 )
 
 
@@ -100,7 +103,21 @@ async def get_settings_route(
 )
 async def update_settings_route(
     current_user:   Annotated[TokenData, Depends(get_current_user)],
-    settings_in:    Annotated[ SettingsUpdate, Body(...)]
+    settings_in:    Annotated[SettingsUpdate, Body(...)]
 ) -> MessageOut:
     
     return await update_settings_service(current_user.id, settings_in)
+
+
+
+
+@router.post(
+    '/test',
+    response_model = TestNotificationOut
+)
+async def send_test_notification_route(
+    current_user:   Annotated[TokenData, Depends(get_current_user)],
+    test_in:        Annotated[TestNotificationIn, Body(...)]
+) -> TestNotificationOut:
+    
+    return await send_test_notification_service(current_user.id, test_in)
