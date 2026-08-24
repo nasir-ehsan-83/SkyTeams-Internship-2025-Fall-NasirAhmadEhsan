@@ -20,7 +20,7 @@ from app.models import (
     Notification
 )
 from app.config import logger
-from app.schemas.notifications import SettingsOut
+from app.schemas.notifications import SettingsOut, SettingsUpdate
 
 
 
@@ -202,6 +202,49 @@ async def get_settings_service(
         
     except Exception as error:
         logger.error(f"Unexpected error in get_settings_service: {error}", exc_info = True)
+        
+        raise HTTPException(
+            status_code = status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail = "Internal server error"
+        )
+
+
+
+
+async def update_settings_service(
+    owner_id:       BeanieObjectId,
+    settings_in:    SettingsUpdate
+) -> MessageOut:
+    
+    try:
+        settings = await NotificationSettings.find_one({"owner_id": owner_id})
+        
+        if not settings:
+            settings = NotificationSettings(owner_id = owner_id)
+        
+        if settings_in.push_enabled is not None:
+            settings.push_enabled = settings_in.push_enabled
+        
+        if settings_in.email_enabled is not None:
+            settings.email_enabled = settings_in.email_enabled
+        
+        if settings_in.reminder_time is not None:
+            settings.reminder_time = settings_in.reminder_time
+        
+        if settings_in.reminder_days is not None:
+            settings.reminder_days = settings_in.reminder_days
+        
+        await settings.save() # type: ignore
+        
+        return MessageOut(
+            message = "Settings updated successfully"
+        )
+        
+    except HTTPException:
+        raise
+        
+    except Exception as error:
+        logger.error(f"Unexpected error in update_settings_service: {error}", exc_info = True)
         
         raise HTTPException(
             status_code = status.HTTP_500_INTERNAL_SERVER_ERROR,

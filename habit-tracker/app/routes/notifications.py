@@ -14,13 +14,15 @@ from app.schemas import (
     TokenData,
     MessageOut,
     ScheduleUpdate,
-    SettingsOut
+    SettingsOut,
+    SettingsUpdate
 )
 from app.services.notifications_service import (
     create_schedule_service,
     update_schedule_service,
     delete_schedule_service,
-    get_settings_service
+    get_settings_service,
+    update_settings_service
 )
 
 
@@ -88,3 +90,17 @@ async def get_settings_route(
 ) -> SettingsOut:
     
     return await get_settings_service(current_user.id)
+
+
+
+
+@router.put(
+    '/settings',
+    response_model = MessageOut
+)
+async def update_settings_route(
+    current_user:   Annotated[TokenData, Depends(get_current_user)],
+    settings_in:    Annotated[ SettingsUpdate, Body(...)]
+) -> MessageOut:
+    
+    return await update_settings_service(current_user.id, settings_in)
