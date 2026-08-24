@@ -10,7 +10,9 @@ from beanie import BeanieObjectId
 
 from app.schemas import (
     ScheduleCreate,
-    ScheduleOut
+    ScheduleOut,
+    MessageOut, 
+    ScheduleUpdate
 )
 from app.models import (
     Habit, 
@@ -75,3 +77,57 @@ async def create_schedule_service(
             detail = "Internal server error"
         )
 
+
+
+
+async def update_schedule_service(
+    owner_id:       BeanieObjectId,
+    schedule_id:    BeanieObjectId,
+    schedule_in:    ScheduleUpdate
+) -> MessageOut:
+    
+    try:
+        notification = await Notification.find_one({
+            "_id": schedule_id,
+            "owner_id": owner_id
+        })
+        
+        if not notification:
+            raise HTTPException(
+                status_code = status.HTTP_404_NOT_FOUND,
+                detail = "Schedule not found"
+            )
+        
+        if schedule_in.time is not None:
+            notification.time = schedule_in.time
+            
+            now = datetime.now()
+            trigger_time = datetime.combine(now.date(), datetime.strptime(schedule_in.time, "%H:%M").time())
+            
+            if trigger_time <= now:
+                trigger_time += timedelta(days=1)
+            
+            notification.next_trigger = trigger_time
+        
+        if schedule_in.days is not None:
+            notification.days = schedule_in.days
+        
+        if schedule_in.is_active is not None:
+            notification.is_active = schedule_in.is_active
+        
+        await notification.save() # type: ignore
+        
+        return MessageOut(
+            message = "Schedule updated successfully"
+        )
+        
+    except HTTPException:
+        raise
+        
+    except Exception as error:
+        logger.error(f"Unexpected error in update_schedule_service: {error}", exc_info = True)
+        
+        raise HTTPException(
+            status_code = status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail = "Internal server error"
+        )
