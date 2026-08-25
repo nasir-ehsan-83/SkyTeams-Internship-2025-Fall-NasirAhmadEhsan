@@ -18,6 +18,12 @@ from app.utils.enum import (
 
 class HabitBase(BaseModel):
     
+    id: BeanieObjectId = Field(
+        ..., 
+        alias = "_id",
+        description = "Unique identifier for the habit (MongoDB ObjectId)"
+    )
+    
     name: str = Field(
         ..., 
         min_length = 3, 
@@ -73,10 +79,6 @@ class HabitPrivateOut(HabitBase):
 
 
 class HabitAdminOut(HabitBase):
-    _id: BeanieObjectId = Field(
-        ..., 
-        description = "Unique identifier for the habit (MongoDB ObjectId)"
-    )
     
     owner_id: BeanieObjectId = Field(
         ..., 
