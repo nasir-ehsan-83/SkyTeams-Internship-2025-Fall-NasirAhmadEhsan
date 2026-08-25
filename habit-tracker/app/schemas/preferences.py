@@ -133,7 +133,7 @@ class PreferenceUpdate(BaseModel):
                 raise ValueError("reminder_time must be in HH:MM format (e.g., 14:30)")
         return v
 
-    @field_validator("theme", "language", "timezone", "start_of_week", "default_vie")
+    @field_validator("theme", "language", "timezone", "start_of_week", "default_vie", check_fields = False)
     @classmethod
     def validate_not_empty(cls, v: str | None) -> str | None:
 
