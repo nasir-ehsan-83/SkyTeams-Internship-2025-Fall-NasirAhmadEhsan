@@ -136,7 +136,7 @@ async def send_test_notification_route(
 )
 async def get_notification_history_route(
     current_user:   Annotated[TokenData, Depends(get_current_user)],
-    limit:          Annotated[int, Query(default = 20, ge = 1, le = 100)]
+    limit:          Annotated[int, Query(ge = 1, le = 100)] = 20
 ) -> NotificationHistoryOut:
     
     return await get_notification_history_service(current_user.id, limit)

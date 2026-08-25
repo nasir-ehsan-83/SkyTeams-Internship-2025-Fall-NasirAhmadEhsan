@@ -74,10 +74,10 @@ async def create_habit_route(
 )
 async def get_all_habits_route(
     current_user:   Annotated[TokenData, Depends(get_current_user)], 
-    category:       Annotated[HabitCategory, Query(default = "")],
-    completed:      Annotated[bool, Query(default = False)],
-    page:           Annotated[int, Query(default = 1, gt = 0)], 
-    limit:          Annotated[int, Query(default = 10, gt = 0)]
+    category:       Annotated[HabitCategory, Query()] = "",
+    completed:      Annotated[bool, Query()] = False,
+    page:           Annotated[int, Query(gt = 0)] = 1, 
+    limit:          Annotated[int, Query(gt = 0)] = 10
 ) -> List[Habit]:
     
     return await get_all_habits_service(current_user.id, category, completed, page, limit)
@@ -173,8 +173,8 @@ async def unarchive_habit_route(
 )
 async def get_archived_habits_route(
     current_user:   Annotated[TokenData, Depends(get_current_user)],
-    page:           Annotated[int, Query(default = 1, gt = 0)], 
-    limit:          Annotated[int, Query(default = 10, gt = 0)]
+    page:           Annotated[int, Query(gt = 0)] = 1, 
+    limit:          Annotated[int, Query(gt = 0)] = 10
 ) -> List[Habit]:
     
     return await get_archived_habits_service(current_user.id, page, limit)

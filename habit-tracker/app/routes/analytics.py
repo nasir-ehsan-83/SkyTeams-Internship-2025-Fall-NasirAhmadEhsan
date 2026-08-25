@@ -43,7 +43,7 @@ router: APIRouter = APIRouter(
     response_model = DashboardOut
 )
 async def get_dashboard_route(
-    timeframe:      Annotated[Timeframe | None, Query(default = None)]
+    timeframe:      Annotated[Timeframe | None, Query()] = None
 ) -> DashboardOut:
     
     return await get_dashboard_service(timeframe)
@@ -57,7 +57,7 @@ async def get_dashboard_route(
 )
 async def get_heatmap_route(
     year:       Annotated[int, Query(ge = 2020, le = 2100)],
-    month:      Annotated[int | None, Query(default = None, ge = 1, le = 12)]
+    month:      Annotated[int | None, Query(ge = 1, le = 12)] = None
 ) -> HeatmapOut:
     
     return await get_heatmap_service(year, month)
@@ -71,7 +71,7 @@ async def get_heatmap_route(
 )
 async def get_progress_chart_route(
     habit_id:   Annotated[BeanieObjectId, Query()],
-    period:     Annotated[int, Query(default = 90, ge = 1, le = 365)]
+    period:     Annotated[int, Query(ge = 1, le = 365)] = 90
 ) -> ProgressChartOut:
     
     return await get_progress_chart_service(habit_id, period)
@@ -107,9 +107,9 @@ async def get_insights_route() -> InsightsOut:
     response_model = ExportOut
 )
 async def export_data_route(
-    format:         Annotated[str, Query(default = "json", pattern = "^(json|csv)$")],
-    from_date:      Annotated[date | None, Query(default = None)],
-    to_date:        Annotated[date | None, Query(default = None)]
+    format:         Annotated[str, Query(pattern = "^(json|csv)$")] = "json",
+    from_date:      Annotated[date | None, Query()] = None,
+    to_date:        Annotated[date | None, Query()] = None
 ) -> ExportOut:
     
     return await export_data_service(format, from_date, to_date)

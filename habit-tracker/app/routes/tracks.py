@@ -95,8 +95,8 @@ async def delete_track_route(
 )
 async def get_daily_tracks_route(
     current_user:   Annotated[TokenData, Depends(get_current_user)],
-    habit_id:       Annotated[BeanieObjectId, Query(default = None)],
     target_date:    Annotated[date, Query()],
+    habit_id:       Annotated[BeanieObjectId | None, Query()] = None,
 ) -> List[Track]:
     
     return await get_daily_tracks_service(current_user.id, habit_id, target_date)
@@ -126,7 +126,7 @@ async def get_track_history_router(
 )
 async def get_missed_days_route(
     current_user:   Annotated[TokenData, Depends(get_current_user)],
-    habit_id:       Annotated[BeanieObjectId | None, Query(default = None)], 
+    habit_id:       Annotated[BeanieObjectId | None, Query()] = None, 
 ) -> MissedDaysResponse:
     
     return await get_missed_days_service(current_user.id, habit_id)
