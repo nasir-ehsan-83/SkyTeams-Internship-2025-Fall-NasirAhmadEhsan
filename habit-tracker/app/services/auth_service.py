@@ -52,9 +52,27 @@ REDIS_VERIFY_TOKEN_PREFIX = "auth:verify-token:"
 async def create_user_service(
     user: UserCreate
 ) -> User:
+    
+    """Registers a new user account.
+
+    Creates a new user with the provided credentials, hashes the password,
+    and sets up default user preferences. Performs duplicate email check
+    before creation.
+
+    Args:
+        user: User registration data including email, username, and password.
+
+    Returns:
+        User: The created user object with all fields populated.
+
+    Raises:
+        HTTPException 409: If username or email already exists.
+        HTTPException 500: If an internal server error occurs.
+    """
+
     try:
         new_user = User(
-            **user.model_dump(exclude={"password"}),
+            **user.model_dump(exclude = {"password"}),
             password = await hash_password(user.password)
         )
         saved_user = await new_user.insert()
@@ -73,7 +91,7 @@ async def create_user_service(
 
     except Exception as error:
         logger.error(f"Unexpected error in create_user_service: {error}", exc_info = True)
-       
+
         raise HTTPException(
             status_code = status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail = "Internal server error"
@@ -83,15 +101,33 @@ async def create_user_service(
 
 
 async def login_service(
-    response: Response,
-    user_credential: OAuth2PasswordRequestForm
+    response:           Response,
+    user_credential:    OAuth2PasswordRequestForm
 ) -> Dict[str, Any]:
-    try:
     
+    """Authenticates a user and returns access tokens.
+
+    Validates user credentials, checks account status, and generates JWT
+    access and refresh tokens. Sets refresh token as HTTP-only cookie.
+
+    Args:
+        response: FastAPI response object for setting cookies.
+        user_credential: User credentials in OAuth2 password flow format.
+
+    Returns:
+        Dict[str, Any]: Contains access_token, token_type, and user payload.
+
+    Raises:
+        HTTPException 401: If credentials are invalid.
+        HTTPException 403: If user account is inactive.
+        HTTPException 500: If an internal server error occurs.
+    """
+
+    try:
         user = await User.find_one(User.username == user_credential.username)
 
         if not user or not await verify_password(user_credential.password, user.password):
-           
+            
             raise HTTPException(
                 status_code = status.HTTP_401_UNAUTHORIZED,
                 detail = "Invalid credentials"
@@ -100,7 +136,7 @@ async def login_service(
         if user.status != "active":
             raise HTTPException(
                 status_code = status.HTTP_403_FORBIDDEN,
-                detail = "User account is inactive"
+                detai = "User account is inactive"
             )
 
         user_payload: Dict[str, Any] = {
@@ -122,8 +158,8 @@ async def login_service(
             value = refresh_token,
             httponly = True,
             max_age = 7 * 24 * 60 * 60,
-            #secure = True,
-            #samesite = "lax"
+            # secure=True,
+            # samesite="lax"
         )
 
         return {
@@ -137,7 +173,7 @@ async def login_service(
 
     except Exception as error:
         logger.error(f"Unexpected error in login_service: {error}", exc_info = True)
-        
+
         raise HTTPException(
             status_code = status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail = "Internal server error"
@@ -147,10 +183,27 @@ async def login_service(
 
 
 async def refresh_token_service(
-    request: Request
+    request:    Request
 ) -> Dict[str, Any]:
-    try:
     
+    """Refreshes the access token.
+
+    Validates the refresh token from cookies and generates a new access
+    token if the refresh token is valid and matches the stored one.
+
+    Args:
+        request: FastAPI request object containing cookies.
+
+    Returns:
+        Dict[str, Any]: Contains new access_token, token_type, and user payload.
+
+    Raises:
+        HTTPException 401: If refresh token is not found.
+        HTTPException 403: If token expired or blacklisted.
+        HTTPException 500: If an internal server error occurs.
+    """
+
+    try:
         refresh_token = request.cookies.get("jwt")
 
         if not refresh_token:
@@ -166,7 +219,7 @@ async def refresh_token_service(
             saved_token = saved_token.decode("utf-8")
 
         if not saved_token or saved_token != refresh_token:
-            
+           
             raise HTTPException(
                 status_code = status.HTTP_403_FORBIDDEN,
                 detail = "Token expired or blacklisted"
@@ -188,7 +241,6 @@ async def refresh_token_service(
 
     except Exception as error:
         logger.error(f"Unexpected error in refresh_token_service: {error}", exc_info = True)
-        
         raise HTTPException(
             status_code = status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail = "Internal server error"
@@ -198,12 +250,24 @@ async def refresh_token_service(
 
 
 async def logout_service(
-    request: Request
+    request:    Request
 ) -> Response:
+    
+    """Logs out the authenticated user.
+
+    Clears the refresh token from Redis, blacklists the access token,
+    and removes the JWT cookie.
+
+    Args:
+        request: FastAPI request object containing cookies and headers.
+
+    Returns:
+        Response: Response with cleared cookies.
+    """
 
     refresh_token = request.cookies.get("jwt")
     auth_header = request.headers.get("Authorization")
-    response = Response(status_code = status.HTTP_204_NO_CONTENT)
+    response = Response(status_code=status.HTTP_204_NO_CONTENT)
 
     if refresh_token:
         try:
@@ -216,11 +280,11 @@ async def logout_service(
     if auth_header and auth_header.startswith("Bearer "):
         try:
             access_token = auth_header.split(" ")[1]
-           
+            
             await redis_client.set(
                 name = f"{REDIS_BLACKLIST_PREFIX}{access_token}",
                 value = "revoked",
-                ex = 15 * 60 
+                ex = 15 * 60
             )
         except Exception:
             pass
@@ -232,14 +296,32 @@ async def logout_service(
 
 
 async def delete_account_service(
-    request: Request
+    request:    Request
 ) -> Response:
+    
+    """Permanently deletes the user's account.
+
+    Removes the user from the database along with their refresh token,
+    blacklists the access token, and clears authentication cookies.
+
+    Args:
+        request: FastAPI request object containing cookies and headers.
+
+    Returns:
+        Response: Empty response with status 204.
+
+    Raises:
+        HTTPException 401: If refresh token is not found.
+        HTTPException 404: If user not found.
+        HTTPException 500: If an internal server error occurs.
+    """
+
     try:
         refresh_token = request.cookies.get("jwt")
         auth_header = request.headers.get("Authorization")
-        
+
         if not refresh_token:
-            raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED)
+            raise HTTPException(status_code = status.HTTP_401_UNAUTHORIZED)
 
         payload = await verify_refresh_token(refresh_token)
         user = await User.get(BeanieObjectId(payload["id"]))
@@ -252,7 +334,7 @@ async def delete_account_service(
 
         if auth_header and auth_header.startswith("Bearer "):
             access_token = auth_header.split(" ")[1]
-           
+            
             await redis_client.set(
                 name = f"{REDIS_BLACKLIST_PREFIX}{access_token}",
                 value = "revoked",
@@ -264,7 +346,7 @@ async def delete_account_service(
 
         response = Response(status_code = status.HTTP_204_NO_CONTENT)
         response.delete_cookie("jwt")
-        
+
         return response
 
     except HTTPException:
@@ -272,7 +354,7 @@ async def delete_account_service(
 
     except Exception as error:
         logger.error(f"Unexpected error in delete_account_service: {error}", exc_info = True)
-        
+
         raise HTTPException(
             status_code = status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail = "Internal server error"
@@ -282,8 +364,24 @@ async def delete_account_service(
 
 
 async def forget_password_service(
-    email: EmailStr
+    email:  EmailStr
 ) -> Dict[str, str]:
+    
+    """Initiates the password reset process.
+
+    Sends a verification code to the user's email address. The response
+    is the same regardless of whether the email exists for security.
+
+    Args:
+        email: The registered email address of the user.
+
+    Returns:
+        Dict[str, str]: Success message indicating code was sent.
+
+    Raises:
+        HTTPException 500: If an internal server error occurs.
+    """
+
     try:
         user = await User.find_one(User.email == email)
 
@@ -302,14 +400,14 @@ async def forget_password_service(
         )
 
         await send_email(email, verify_code)
-        
+
         return {
             "message": "Verification code sent successfully"
         }
-    
+
     except HTTPException:
         raise
-    
+
     except Exception as error:
         logger.error(f"Unexpected error in forget_password_service: {error}", exc_info = True)
         
@@ -322,8 +420,26 @@ async def forget_password_service(
 
 
 async def verify_email_service(
-    data: VerifyEmail
+    data:   VerifyEmail
 ) -> str:
+    
+    """Verifies the user's email address.
+
+    Validates the verification code stored in Redis and generates a
+    reset token if verification is successful.
+
+    Args:
+        data: Email and verification code.
+
+    Returns:
+        str: Verification token for password reset.
+
+    Raises:
+        HTTPException 404: If user not found.
+        HTTPException 403: If token expired or invalid.
+        HTTPException 500: If an internal server error occurs.
+    """
+
     try:
         user: User | None = await User.find_one(User.email == data.email)
 
@@ -332,7 +448,7 @@ async def verify_email_service(
                 status_code = status.HTTP_404_NOT_FOUND,
                 detail = "User not found"
             )
-        
+
         saved_code = await redis_client.get(f"{REDIS_VERIFY_CODE_PREFIX}{data.email}")
 
         if isinstance(saved_code, bytes):
@@ -358,10 +474,10 @@ async def verify_email_service(
         )
 
         return verify_token
-    
+
     except HTTPException:
         raise
-    
+
     except Exception as error:
         logger.error(f"Unexpected error in verify_email_service: {error}", exc_info = True)
         
@@ -369,22 +485,40 @@ async def verify_email_service(
             status_code = status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail = "Internal server error"
         )
-    
+
 
 
 
 async def reset_password_service(
-    data: ResetPassword
+    data:   ResetPassword
 ) -> User:
+    
+    """Resets the user's password.
+
+    Validates the reset token, updates the user's password with a new
+    hashed version, and clears existing sessions.
+
+    Args:
+        data: Email, verification token, and new password.
+
+    Returns:
+        User: The updated user object.
+
+    Raises:
+        HTTPException 404: If user not found.
+        HTTPException 403: If token expired or invalid.
+        HTTPException 500: If an internal server error occurs.
+    """
+
     try:
-        user: User | None = await User.find_one(User.email == data.email) 
+        user: User | None = await User.find_one(User.email == data.email)
 
         if not user:
             raise HTTPException(
                 status_code = status.HTTP_404_NOT_FOUND,
-                detail =  "User not found"
+                detail = "User not found"
             )
-        
+
         saved_token = await redis_client.get(f"{REDIS_VERIFY_TOKEN_PREFIX}{data.email}")
 
         if isinstance(saved_token, bytes):
@@ -412,11 +546,11 @@ async def reset_password_service(
 
     except HTTPException:
         raise
-    
+
     except Exception as error:
         logger.error(f"Unexpected error in reset_password_service: {error}", exc_info = True)
-        
         raise HTTPException(
             status_code = status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail = "Internal server error"
         )
+    
